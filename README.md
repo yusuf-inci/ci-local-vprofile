@@ -31,37 +31,27 @@ Once the virtual machines are up and running, you can access the Jenkins web int
 
 ## Jenkins Pipeline
 
-The pipeline script Jenkinsfile defines a Jenkins pipeline that runs a series of stages to build, test, analyze, and deploy the Java web application. The pipeline uses Maven as the build tool and SonarQube for static code analysis. The pipeline script also uploads the built artifacts to a Nexus repository for artifact management.
+This file is a Jenkins pipeline script that defines a CI pipeline. The pipeline consists of several stages, including Build, Test, Checkstyle Analysis, Sonar Analysis, Quality Gate, and UploadArtifact.
 
-The pipeline is structured into stages, each with a set of steps to execute. The stages are as follows:
+The pipeline is configured to run on any available agent and to use Maven 3 and Oracle JDK 8. It also defines several environment variables, including the Nexus repository name and credentials, the SonarQube server and scanner, and the color map for Slack notifications.
 
-1. Build: This stage builds the Java web application using Maven.
-2. Test: This stage runs the unit tests using Maven.
-3. Checkstyle Analysis: This stage runs the Checkstyle static code analysis tool using Maven.
-4. Sonar Analysis: This stage runs the SonarQube code analysis tool using a SonarQube scanner.
-5. Quality Gate: This stage waits for the SonarQube analysis to complete and checks the quality gate status. If the quality gate fails, the pipeline is aborted.
-6. Upload Artifact: This stage uploads the built artifact (a WAR file) to Nexus repository for artifact management.
-7. Slack Notification: This stage sends a notification to a specified Slack channel about the result of the pipeline.
+The Build stage compiles the code and creates a WAR file. If the Build stage is successful, the post section archives the WAR file.
 
+The Test stage runs the unit tests.
+
+The Checkstyle Analysis stage runs Checkstyle to analyze the code.
+
+The Sonar Analysis stage performs a static code analysis using SonarQube. It sets the environment variable for the SonarQube scanner and runs the scanner with specific configurations.
+
+The Quality Gate stage waits for the SonarQube analysis to complete and checks whether the quality of the code meets the specified requirements. If the quality is not met, the pipeline will abort.
+
+The UploadArtifact stage uploads the WAR file to the Nexus repository.
+
+Finally, the post section sends a Slack notification with the status of the pipeline using the defined color map. If the pipeline fails, the Slack message will be colored red, and if it succeeds, it will be colored green.
 
 To use the pipeline script, you must have a Jenkins instance set up and configured with the necessary plugins (Jenkins plugin, Maven Integration, GitHub Integration, Nexus Artifact Uploader, SonarQube Scanner, Slack Notification and Build Timestamp) and tools. 
 
-To use this pipeline, you need to set up a Jenkins job that points to this repository and uses the Jenkinsfile as the pipeline definition. You also need to configure the following environment variables:
-
-MAVEN3: The name of the Maven 3 tool installed in your Jenkins instance.
-OracleJDK8: The name of the Oracle JDK 8 tool installed in your Jenkins instance.
-vprofile-snapshot: The name of the Nexus snapshot repository to use.
-vprofile-release: The name of the Nexus release repository to use.
-vpro-maven-central: The name of the Nexus proxy repository for Maven Central.
-nexuslogin: The name of a Jenkins credential that contains the Nexus username and password.
-admin: The Nexus admin username.
-admin: The Nexus admin password.
-192.168.56.21: The IP address of the Nexus server.
-8081: The port number of the Nexus server.
-vpro-maven-group: The name of the Nexus group repository that includes the snapshot, release, and proxy repositories.
-sonarserver: The name of the SonarQube server configured in your Jenkins instance.
-sonarscanner: The name of the SonarQube scanner tool installed in your Jenkins instance.
-Note that this pipeline assumes that Java web application is located in a directory called 'src/' at the root of your repository.
+To use this pipeline, you need to set up a Jenkins job that points to this repository and uses the Jenkinsfile as the pipeline definition. You also need to configure the environment variables.
 
 Once you have set up the Jenkins job and configured the environment variables, you can run the pipeline by clicking the "Build Now" button in the Jenkins web interface. The pipeline will run all the stages sequentially, and if everything is successful, it will deploy the built artifact to Nexus.
 

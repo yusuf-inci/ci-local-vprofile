@@ -1,15 +1,19 @@
+// Define a color map for Slack notifications based on the result of the current build
 def COLOR_MAP = [
     'SUCCESS': 'good', 
     'FAILURE': 'danger',
 ]
 
 pipeline {
+    // Define the agent for the pipeline to run on any available agent
     agent any
+    // Define the tools required for the pipeline to run, including Maven 3 and Oracle JDK 8
     tools {
         maven "MAVEN3"
         jdk "OracleJDK8"
     }
 
+    // Define environment variables used throughout the pipeline
     environment {
         SNAP_REPO = 'vprofile-snapshot'
         NEXUS_USER = 'admin'
@@ -24,12 +28,15 @@ pipeline {
         SONARSCANNER = 'sonarscanner'
     }
 
+    // Define the stages of the pipeline
     stages {
+        // Build stage compiles the code and creates a WAR file
         stage('Build') {
             steps {
                 sh 'mvn -s settings.xml -DskipTests install'   
             }
             
+            // If the build is successful, archive the WAR file
             post {
                 success {
                     echo "Now Archiving."
@@ -38,18 +45,21 @@ pipeline {
             } 
         }
 
+        // Test stage runs the unit tests
         stage('Test'){
             steps {
                 sh 'mvn -s settings.xml test'
             }
         }
 
+        // Checkstyle Analysis stage runs Checkstyle to analyze the code
         stage('Checkstyle Analysis'){
             steps {
                 sh 'mvn -s settings.xml checkstyle:checkstyle'
             }
         }
 
+        // Sonar Analysis stage performs a static code analysis using SonarQube
         stage('Sonar Analysis') {
             environment {
                 scannerHome = tool "${SONARSCANNER}"
@@ -68,6 +78,7 @@ pipeline {
             }
         }
 
+        // Quality Gate stage waits for the SonarQube analysis to complete and checks whether the quality of the code meets the specified requirements
         stage("Quality Gate") {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
@@ -78,6 +89,7 @@ pipeline {
             }
         }
 
+        // UploadArtifact stage uploads the WAR file to the Nexus repository
         stage("UploadArtifact"){
             steps{
                 nexusArtifactUploader(
@@ -101,9 +113,10 @@ pipeline {
 
     post {
         always {
+            // Send Slack notification with the build result and a link to the build URL
             echo 'Slack Notifications.'
             slackSend channel: '#jenkinscicdlocal',
-                color: COLOR_MAP[currentBuild.currentResult],
+                color: COLOR_MAP[currentBuild.currentResult], // Set the message color based on the build result (SUCCESS = green, FAILURE = red)
                 message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
         }
     }
